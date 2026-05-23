@@ -6,6 +6,7 @@ import { Note, Task, CalendarEvent } from '@/types';
 import NotesTab from '@/components/NotesTab';
 import TasksTab from '@/components/TasksTab';
 import CalendarTab from '@/components/CalendarTab';
+import OnboardingGuide from '@/components/OnboardingGuide';
 import { 
   StickyNote, 
   Calendar as CalendarIcon, 
@@ -26,6 +27,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('appnote-theme', 'dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [hasViewedGuide, setHasViewedGuide, isGuideViewedHydrated] = useLocalStorage<boolean>('appnote-guide-viewed', false);
+
+  // Onboarding Guide Auto-open
+  useEffect(() => {
+    if (isGuideViewedHydrated && !hasViewedGuide) {
+      setIsGuideOpen(true);
+    }
+  }, [isGuideViewedHydrated, hasViewedGuide]);
+
+  const handleCloseGuide = () => {
+    setIsGuideOpen(false);
+    setHasViewedGuide(true);
+  };
   const [currentTime, setCurrentTime] = useState('');
   const [currentDateStr, setCurrentDateStr] = useState('');
 
@@ -247,19 +262,25 @@ export default function Home() {
 
   return (
     <div className="app-container">
+      <OnboardingGuide isOpen={isGuideOpen} onClose={handleCloseGuide} />
       {/* Sidebar Navigation */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div>
-          <div className="sidebar-logo">
-            <svg 
-              viewBox="0 0 75 65" 
-              width="18" 
-              height="18" 
-              fill="currentColor"
-            >
-              <polygon points="37.5,0 75,65 0,65" />
-            </svg>
-            <span className="text-mono" style={{ fontWeight: 800 }}>AppNote</span>
+          <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <svg 
+                viewBox="0 0 75 65" 
+                width="18" 
+                height="18" 
+                fill="currentColor"
+              >
+                <polygon points="37.5,0 75,65 0,65" />
+              </svg>
+              <span className="text-mono" style={{ fontWeight: 800 }}>AppNote</span>
+            </div>
+            <button className="menu-toggle-close" onClick={() => setIsSidebarOpen(false)} title="Close Menu">
+              <X size={15} />
+            </button>
           </div>
 
           <nav className="sidebar-nav">
@@ -303,6 +324,16 @@ export default function Home() {
         </div>
 
         <div className="sidebar-footer">
+          <button 
+            className="secondary-btn" 
+            style={{ width: '100%', fontSize: '11px', padding: '6px 0', justifyContent: 'center', height: '28px', gap: '6px', border: '1px solid var(--border-primary)' }}
+            onClick={() => setIsGuideOpen(true)}
+            title="Show Quick Onboarding Tour Guide"
+          >
+            <Sparkles size={11} style={{ color: '#50e3c2' }} />
+            <span className="text-mono">Tour Guide</span>
+          </button>
+
           {/* Theme toggler */}
           <div className="theme-toggle-container">
             <button 
@@ -336,7 +367,16 @@ export default function Home() {
       {isSidebarOpen && (
         <div 
           onClick={() => setIsSidebarOpen(false)} 
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 90 }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 490 }}
+        />
+      )}
+
+      {/* Backdrop overlay for Scratchpad drawer on mobile */}
+      {isScratchpadOpen && (
+        <div 
+          className="mobile-backdrop"
+          onClick={() => setIsScratchpadOpen(false)} 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', zIndex: 400 }}
         />
       )}
 

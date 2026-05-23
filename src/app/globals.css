@@ -195,7 +195,7 @@ button {
   padding: 24px;
   background-color: var(--bg-secondary);
   flex-shrink: 0;
-  transition: transform 0.3s ease, background-color var(--transition-speed);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color var(--transition-speed);
   z-index: 100;
 }
 
@@ -345,6 +345,10 @@ button {
   display: none;
 }
 
+.menu-toggle-close {
+  display: none;
+}
+
 .header-title {
   font-size: 16px;
   font-weight: 600;
@@ -420,6 +424,7 @@ button {
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
+  width: auto;
 }
 
 .tag-btn {
@@ -812,6 +817,7 @@ button {
   color: var(--fg-primary);
   transition: color var(--transition-speed);
   position: relative;
+  word-break: break-word;
 }
 
 .task-item.completed .task-label {
@@ -823,6 +829,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .task-priority-badge {
@@ -1364,7 +1371,11 @@ button {
   color: var(--fg-secondary);
 }
 
-/* Responsive CSS adjustments */
+.mobile-backdrop {
+  display: none;
+}
+
+/* Responsive CSS - Professional Grade */
 @media (max-width: 1024px) {
   .calendar-layout {
     grid-template-columns: 1fr;
@@ -1374,7 +1385,10 @@ button {
   }
   .calendar-sidebar {
     height: auto;
-    max-height: 300px;
+    max-height: 320px;
+  }
+  .calendar-grid-container {
+    height: 480px;
   }
 }
 
@@ -1383,14 +1397,19 @@ button {
     flex-direction: column;
   }
 
+  /* Sidebar Drawer overlaps completely and starts at top: 0 */
   .sidebar {
     position: fixed;
     left: 0;
-    top: 64px;
+    top: 0;
     bottom: 0;
-    width: 260px;
+    height: 100vh;
+    width: 280px;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    background-color: var(--bg-primary);
+    padding: 20px;
+    z-index: 500; /* Overlap everything */
   }
 
   .sidebar.open {
@@ -1404,31 +1423,65 @@ button {
     padding: 8px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-primary);
+    color: var(--fg-primary);
+  }
+
+  .menu-toggle-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border-primary);
+    background-color: var(--bg-secondary);
   }
 
   .header {
     padding: 0 16px;
+    height: 56px;
   }
 
-  .content-pane {
-    padding: 16px;
+  .header-meta {
+    gap: 10px;
   }
 
   .search-container {
-    width: 150px;
+    width: 120px;
+  }
+
+  .search-input {
+    padding: 4px 8px 4px 26px;
+    font-size: 12px;
+  }
+
+  .search-icon {
+    left: 8px;
   }
   
   .shortcut-badge {
     display: none;
   }
 
+  .content-pane {
+    padding: 16px;
+  }
+
   .notes-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
+  /* Smooth scrolling tag filters without scrollbars */
   .tags-filter {
     order: 2;
+    overflow-x: auto;
+    width: 100%;
+    scrollbar-width: none; /* Firefox */
+  }
+  .tags-filter::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
   }
   
   .primary-btn {
@@ -1436,16 +1489,125 @@ button {
     justify-content: center;
   }
 
-  /* Splitted container for mobile */
+  /* Floating drawer for Scratchpad in mobile */
   .scratchpad-container {
     position: fixed;
     right: 0;
-    top: 64px;
+    top: 0;
     bottom: 0;
+    height: 100vh;
+    width: 290px;
     transform: translateX(100%);
     box-shadow: var(--shadow-lg);
+    z-index: 450;
+    background-color: var(--bg-primary);
   }
   .scratchpad-container.open-mobile {
     transform: translateX(0);
+  }
+
+  .mobile-backdrop {
+    display: block;
+  }
+
+  /* Stacking tasks checklist items */
+  .task-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .task-item-right {
+    justify-content: flex-end;
+    border-top: 1px solid var(--border-primary);
+    padding-top: 8px;
+    width: 100%;
+  }
+
+  .task-delete-btn {
+    opacity: 1;
+    padding: 4px 8px;
+  }
+}
+
+/* Highly optimized Calendar indicator dots for tiny viewports */
+@media (max-width: 600px) {
+  .calendar-month-year {
+    font-size: 15px;
+  }
+
+  .calendar-nav-buttons button {
+    padding: 4px 8px;
+  }
+
+  .calendar-cell {
+    min-height: 54px;
+    padding: 4px;
+  }
+
+  .calendar-cell-date-num {
+    font-size: 10px;
+    align-self: flex-start;
+  }
+
+  .calendar-cell.today .calendar-cell-date-num {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  /* Transform Event names into subtle minimalist indicator dots on mobile */
+  .calendar-mini-event {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: none !important;
+    padding: 0;
+    display: inline-block;
+    margin: 1px;
+    font-size: 0;
+    text-indent: -9999px;
+  }
+
+  .calendar-cell-events {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 3px;
+    max-height: 14px;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  
+  .calendar-grid-container {
+    height: 380px;
+  }
+
+  .quick-add-task {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-meta .text-mono {
+    display: none !important; /* Hide ticking clock text to save space for search and scratchpad */
+  }
+
+  .search-container {
+    width: 100px;
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .modal-body {
+    padding: 16px;
+    gap: 12px;
   }
 }
