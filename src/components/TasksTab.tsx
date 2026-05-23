@@ -247,7 +247,7 @@ export default function TasksTab({ tasks, setTasks, searchQuery }: TasksTabProps
 
       {/* Quick Add Form */}
       <form onSubmit={handleAddTask} className="card quick-add-task animate-slide-up" style={{ padding: '16px', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="quick-add-task-row" style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
           <input
             type="text"
             placeholder="Add task... try 'จองคิวหมอ พรุ่งนี้ #high #สุขภาพ @daily'"
@@ -280,8 +280,7 @@ export default function TasksTab({ tasks, setTasks, searchQuery }: TasksTabProps
           </div>
         )}
         
-        {/* Manual Fallbacks Row */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="quick-add-options">
           <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
             <label style={{ fontSize: '10px' }}>Priority:</label>
             <select 
@@ -302,6 +301,13 @@ export default function TasksTab({ tasks, setTasks, searchQuery }: TasksTabProps
               type="date" 
               value={dueDate} 
               onChange={(e) => setDueDate(e.target.value)}
+              onClick={(e) => {
+                try {
+                  (e.target as any).showPicker();
+                } catch (err) {
+                  console.warn("showPicker not supported:", err);
+                }
+              }}
               className="form-input"
               style={{ padding: '2px 8px', fontSize: '12px', height: 'auto', width: '130px' }}
             />

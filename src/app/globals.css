@@ -1529,6 +1529,32 @@ button {
     opacity: 1;
     padding: 4px 8px;
   }
+
+  /* Note actions always visible and easy to tap on mobile */
+  .note-actions {
+    opacity: 1 !important;
+    gap: 8px !important;
+  }
+
+  .note-action-btn {
+    padding: 8px !important;
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-primary) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--fg-primary) !important;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Calendar sidebar event delete always visible and easy to tap on mobile */
+  .sidebar-event-delete {
+    opacity: 1 !important;
+    padding: 8px !important;
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-primary) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--fg-primary) !important;
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 /* Highly optimized Calendar indicator dots for tiny viewports */
@@ -1587,6 +1613,57 @@ button {
   .quick-add-task {
     gap: 8px;
   }
+
+  .quick-add-task-row {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  
+  .quick-add-task-row .quick-add-input {
+    width: 100% !important;
+  }
+  
+  .quick-add-task-row button {
+    flex-grow: 1;
+    justify-content: center;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  /* 2x2 grid for manual task selectors on mobile to avoid crowded click zones */
+  .quick-add-options {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  
+  .quick-add-options .form-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+  }
+  
+  .quick-add-options .form-group label {
+    align-self: flex-start;
+    margin-bottom: 2px;
+  }
+
+  .quick-add-options .form-input,
+  .quick-add-options select {
+    width: 100% !important;
+    height: 36px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Default styles for quick add options row (desktop) */
+.quick-add-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 @media (max-width: 480px) {
