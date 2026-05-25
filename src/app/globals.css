@@ -959,7 +959,7 @@ button {
 
 .calendar-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 350px;
   gap: 24px;
   height: calc(100% - 60px);
   overflow: hidden;
@@ -1093,13 +1093,13 @@ button {
 }
 
 .selected-day-title {
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 700;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .selected-day-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-tertiary);
   font-family: var(--font-mono);
 }
@@ -1107,7 +1107,7 @@ button {
 .sidebar-events-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex-grow: 1;
 }
 
@@ -1115,11 +1115,18 @@ button {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   position: relative;
+  transition: all var(--transition-speed);
+}
+
+.sidebar-event-card:hover {
+  border-color: var(--border-secondary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .sidebar-event-card-header {
@@ -1130,7 +1137,7 @@ button {
 }
 
 .sidebar-event-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -1152,7 +1159,7 @@ button {
 }
 
 .sidebar-event-time {
-  font-size: 11px;
+  font-size: 12px;
   font-family: var(--font-mono);
   color: var(--fg-secondary);
   display: flex;
@@ -1161,7 +1168,7 @@ button {
 }
 
 .sidebar-event-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-secondary);
   white-space: pre-wrap;
 }
@@ -1385,7 +1392,8 @@ button {
   }
   .calendar-sidebar {
     height: auto;
-    max-height: 320px;
+    max-height: none;
+    min-height: 350px; /* Comfortable default spacious size */
   }
   .calendar-grid-container {
     height: 480px;
@@ -1594,6 +1602,7 @@ button {
     margin: 1px;
     font-size: 0;
     text-indent: -9999px;
+    background-color: var(--event-color, var(--bg-tertiary)) !important;
   }
 
   .calendar-cell-events {
@@ -1686,5 +1695,29 @@ button {
   .modal-body {
     padding: 16px;
     gap: 12px;
+  }
+}
+
+/* Responsive mobile helper utilities & button overrides */
+@media (max-width: 600px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: inline !important;
+  }
+  .calendar-header-btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    height: 30px !important;
+    gap: 4px !important;
+  }
+}
+@media (min-width: 601px) {
+  .show-mobile {
+    display: none !important;
+  }
+  .hide-mobile {
+    display: inline !important;
   }
 }

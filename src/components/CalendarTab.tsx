@@ -451,7 +451,7 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button 
             type="button"
-            className="secondary-btn"
+            className="secondary-btn calendar-header-btn"
             onClick={handleToggleHolidays}
             style={{
               padding: '6px 12px',
@@ -468,7 +468,8 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
             }}
           >
             <span style={{ fontSize: '14px' }}>🇹🇭</span>
-            <span>Thai Holidays</span>
+            <span className="hide-mobile">Thai Holidays</span>
+            <span className="show-mobile">Holidays</span>
             {isLoadingHolidays && (
               <span style={{
                 display: 'inline-block',
@@ -483,8 +484,10 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
             )}
           </button>
 
-          <button className="primary-btn" onClick={() => setIsModalOpen(true)} style={{ height: '36px' }}>
-            <Plus size={16} /> Schedule Event
+          <button className="primary-btn calendar-header-btn" onClick={() => setIsModalOpen(true)} style={{ height: '36px' }}>
+            <Plus size={16} /> 
+            <span className="hide-mobile">Schedule Event</span>
+            <span className="show-mobile">Schedule</span>
           </button>
         </div>
       </div>
@@ -531,8 +534,9 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
                           maxWidth: '100%',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
+                          whiteSpace: 'nowrap',
+                          '--event-color': '#d97706'
+                        } as React.CSSProperties}
                         title={`🇹🇭 ${h.title} (Official Holiday)`}
                       >
                         🇹🇭 {getShortHolidayTitle(h.title)}
@@ -544,7 +548,10 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
                       <div
                         key={e.id}
                         className="calendar-mini-event"
-                        style={e.color ? { borderLeftColor: e.color } : undefined}
+                        style={{
+                          borderLeftColor: e.color || undefined,
+                          '--event-color': e.color || undefined
+                        } as React.CSSProperties}
                         title={`${e.startTime || ''} ${e.title}`}
                       >
                         {e.startTime ? `${e.startTime} ` : ''}{e.title}
