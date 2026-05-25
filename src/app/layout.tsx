@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AppNote — Premium Vercel-style Task Scheduler & Notes",
+  title: "LuciaNote — Premium Vercel-style Task Scheduler & Notes",
   description: "A minimalist, fast, and feature-rich note-taking and scheduling application styled with Vercel design system aesthetics. Safe offline client-side storage.",
 };
 

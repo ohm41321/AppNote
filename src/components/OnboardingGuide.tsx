@@ -38,7 +38,7 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
                 <polygon points="37.5,0 75,65 0,65" />
               </svg>
             </div>
-            <h2 className="text-mono" style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>Welcome to AppNote</h2>
+            <h2 className="text-mono" style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>Welcome to LuciaNote</h2>
             <p style={{ fontSize: '14px', color: 'var(--fg-secondary)', lineHeight: '1.6', maxWidth: '380px' }}>
               Your beautiful, ultra-minimalist, offline-first dashboard designed to organize notes, calendar schedules, and tasks with Vercel design aesthetics.
             </p>
@@ -92,7 +92,7 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
                 "จองคิวหมอ พรุ่งนี้ #ด่วน #สุขภาพ @daily"
               </code>
               <br />
-              AppNote automatically extracts titles, hashtags as categories, priorities, due dates, and sets daily habit loops!
+              LuciaNote automatically extracts titles, hashtags as categories, priorities, due dates, and sets daily habit loops!
             </p>
           </div>
         );
@@ -120,11 +120,11 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
 
   return (
     <div className="modal-overlay" style={{ zIndex: 3000 }}>
-      <div 
-        className="modal-content animate-slide-up" 
-        style={{ 
-          maxWidth: '460px', 
-          borderRadius: 'var(--radius-xl)', 
+      <div
+        className="modal-content animate-slide-up"
+        style={{
+          maxWidth: '460px',
+          borderRadius: 'var(--radius-xl)',
           border: '1.5px solid var(--border-primary)',
           overflow: 'hidden'
         }}
@@ -139,15 +139,15 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
           {renderStepContent()}
         </div>
 
-        <div 
-          className="modal-footer" 
-          style={{ 
-            borderTop: '1px solid var(--border-primary)', 
-            padding: '16px 32px', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            backgroundColor: 'var(--bg-secondary)' 
+        <div
+          className="modal-footer"
+          style={{
+            borderTop: '1px solid var(--border-primary)',
+            padding: '16px 32px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-secondary)'
           }}
         >
           {/* Progress dots indicators */}
@@ -169,8 +169,8 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '10px' }}>
             {currentStep > 1 && (
-              <button 
-                className="secondary-btn" 
+              <button
+                className="secondary-btn"
                 onClick={prevStep}
                 style={{ height: '32px', padding: '0 12px', fontSize: '12px', gap: '4px' }}
               >
@@ -178,9 +178,9 @@ export default function OnboardingGuide({ isOpen, onClose }: OnboardingGuideProp
                 <span>Back</span>
               </button>
             )}
-            
-            <button 
-              className="primary-btn" 
+
+            <button
+              className="primary-btn"
               onClick={nextStep}
               style={{ height: '32px', padding: '0 12px', fontSize: '12px', gap: '4px' }}
             >

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { CalendarEvent } from '@/types';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock, X, Info } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { CalendarEvent, ThaiHoliday } from '@/types';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Calendar as CalendarIcon, Clock, X, Info, Lock } from 'lucide-react';
 
 interface CalendarTabProps {
   events: CalendarEvent[];
@@ -183,6 +183,61 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   
+  // Thailand Holidays State
+  const [holidays, setHolidays] = useState<ThaiHoliday[]>([]);
+  const [showHolidays, setShowHolidays] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('appnote-show-holidays');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+  const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
+  const [holidaysCache, setHolidaysCache] = useState<Record<number, ThaiHoliday[]>>({});
+
+  const handleToggleHolidays = () => {
+    const newVal = !showHolidays;
+    setShowHolidays(newVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('appnote-show-holidays', String(newVal));
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const yearToFetch = currentMonth.getFullYear();
+    
+    if (holidaysCache[yearToFetch]) {
+      setHolidays(holidaysCache[yearToFetch]);
+      return;
+    }
+
+    const fetchHolidays = async () => {
+      setIsLoadingHolidays(true);
+      try {
+        const response = await fetch(`https://thailandformats.com/api/v1/holidays/${yearToFetch}`);
+        if (!response.ok) {
+          throw new Error(`HTTP status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (active && data && Array.isArray(data.holidays)) {
+          const list = data.holidays as ThaiHoliday[];
+          setHolidaysCache(prev => ({ ...prev, [yearToFetch]: list }));
+          setHolidays(list);
+        }
+      } catch (e) {
+        console.error(`Failed to fetch Thai holidays for ${yearToFetch}:`, e);
+      } finally {
+        if (active) setIsLoadingHolidays(false);
+      }
+    };
+
+    fetchHolidays();
+    return () => {
+      active = false;
+    };
+  }, [currentMonth.getFullYear()]);
+  
   // Modal & Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -214,6 +269,50 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  };
+
+  const getShortHolidayTitle = (title: string) => {
+    const t = title.trim();
+    
+    // Exact mapping for the cleanest, most premium look in calendar cells
+    const mappings: Record<string, string> = {
+      "New Year's Day": "New Year",
+      "Special Public Holiday": "Special Holiday",
+      "Makha Bucha Day": "Makha Bucha",
+      "Chakri Memorial Day": "Chakri Day",
+      "Songkran Festival": "Songkran",
+      "National Labour Day": "Labour Day",
+      "Coronation Day": "Coronation Day",
+      "Visakha Bucha Day": "Visakha Bucha",
+      "Substitution for Visakha Bucha Day": "Sub. Visakha Bucha",
+      "H.M. Queen Suthida's Birthday": "Queen Suthida Bday",
+      "Substitution for Buddhist Lent Day (Khao Phansa)": "Sub. Khao Phansa",
+      "H.M. King Maha Vajiralongkorn's Birthday": "King Rama X Bday",
+      "Asanha Bucha Day": "Asanha Bucha",
+      "Buddhist Lent Day": "Khao Phansa",
+      "H.M. Queen Sirikit The Queen Mother's Birthday / Mother's Day": "Mother's Day",
+      "H.M. King Bhumibol Adulyadej The Great Memorial Day": "King Rama IX Memorial",
+      "Chulalongkorn Memorial Day": "Chulalongkorn Day",
+      "H.M. King Bhumibol Adulyadej's Birthday / National Day / Father's Day": "King Rama IX Bday",
+      "Substitution for H.M. King Bhumibol Adulyadej's Birthday, National Day, and Father's Day": "Sub. King Rama IX Bday",
+      "Constitution Day": "Constitution Day",
+      "New Year's Eve": "New Year's Eve"
+    };
+
+    if (mappings[t]) return mappings[t];
+    
+    // Fallback heuristic shortening if not matched exactly
+    let short = t;
+    short = short.replace(/^Substitution for H\.M\. /i, 'Sub. ');
+    short = short.replace(/^Substitution for /i, 'Sub. ');
+    short = short.replace(/H\.M\. /g, '');
+    short = short.replace(/Adulyadej's Birthday/g, 'Bday');
+    short = short.replace(/'s Birthday/g, ' Bday');
+    
+    if (short.length > 20) {
+      return short.substring(0, 18) + '...';
+    }
+    return short;
   };
 
   // Generate calendar days
@@ -274,6 +373,13 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
       .filter(event => event.date === dateStr)
       .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
   }, [events, selectedDate]);
+
+  // Selected date holidays
+  const selectedDateHolidays = useMemo(() => {
+    if (!showHolidays) return [];
+    const dateStr = formatDateString(selectedDate);
+    return holidays.filter(h => h.start_date <= dateStr && h.end_date >= dateStr);
+  }, [holidays, selectedDate, showHolidays]);
 
   // Check if date is today
   const isToday = (date: Date) => {
@@ -342,9 +448,45 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
           </div>
         </div>
 
-        <button className="primary-btn" onClick={() => setIsModalOpen(true)}>
-          <Plus size={16} /> Schedule Event
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            type="button"
+            className="secondary-btn"
+            onClick={handleToggleHolidays}
+            style={{
+              padding: '6px 12px',
+              fontSize: '13px',
+              fontWeight: 500,
+              gap: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: showHolidays ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
+              borderColor: showHolidays ? '#f59e0b' : 'var(--border-primary)',
+              color: showHolidays ? '#d97706' : 'var(--fg-secondary)',
+              transition: 'all 0.2s ease',
+              height: '36px'
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>🇹🇭</span>
+            <span>Thai Holidays</span>
+            {isLoadingHolidays && (
+              <span style={{
+                display: 'inline-block',
+                width: '10px',
+                height: '10px',
+                border: '1.5px solid currentColor',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginLeft: '4px'
+              }} />
+            )}
+          </button>
+
+          <button className="primary-btn" onClick={() => setIsModalOpen(true)} style={{ height: '36px' }}>
+            <Plus size={16} /> Schedule Event
+          </button>
+        </div>
       </div>
 
       <div className="calendar-layout">
@@ -362,6 +504,8 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
             {calendarCells.map(({ date, isCurrentMonth, key }) => {
               const dateStr = formatDateString(date);
               const dayEvents = filteredEventsForSearch.filter(e => e.date === dateStr);
+              const dayHolidays = showHolidays ? holidays.filter(h => h.start_date <= dateStr && h.end_date >= dateStr) : [];
+              const totalItemsCount = dayHolidays.length + dayEvents.length;
               const cellIsSelected = formatDateString(selectedDate) === dateStr;
 
               return (
@@ -374,7 +518,29 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
                   <span className="calendar-cell-date-num">{date.getDate()}</span>
                   
                   <div className="calendar-cell-events">
-                    {dayEvents.slice(0, 2).map(e => (
+                    {/* Render Official Holidays */}
+                    {dayHolidays.map(h => (
+                      <div
+                        key={h.slug}
+                        className="calendar-mini-event"
+                        style={{
+                          borderLeftColor: '#d97706',
+                          backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                          color: 'var(--fg-primary)',
+                          fontWeight: 500,
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                        title={`🇹🇭 ${h.title} (Official Holiday)`}
+                      >
+                        🇹🇭 {getShortHolidayTitle(h.title)}
+                      </div>
+                    ))}
+
+                    {/* Render Personal Events */}
+                    {dayEvents.slice(0, Math.max(0, 2 - dayHolidays.length)).map(e => (
                       <div
                         key={e.id}
                         className="calendar-mini-event"
@@ -384,9 +550,10 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
                         {e.startTime ? `${e.startTime} ` : ''}{e.title}
                       </div>
                     ))}
-                    {dayEvents.length > 2 && (
+
+                    {totalItemsCount > 2 && (
                       <div className="calendar-mini-event" style={{ opacity: 0.6, fontSize: '8px', borderLeft: 'none', textAlign: 'center' }}>
-                        +{dayEvents.length - 2} more
+                        +{totalItemsCount - 2} more
                       </div>
                     )}
                   </div>
@@ -408,43 +575,105 @@ export default function CalendarTab({ events, setEvents, searchQuery }: Calendar
           </div>
 
           <div className="sidebar-events-list">
-            {selectedDateEvents.length === 0 ? (
+            {selectedDateHolidays.length === 0 && selectedDateEvents.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--fg-tertiary)', textAlign: 'center', gap: '8px' }}>
                 <CalendarIcon size={28} strokeWidth={1.5} />
                 <span style={{ fontSize: '12px' }}>No events scheduled</span>
               </div>
             ) : (
-              selectedDateEvents.map(event => (
-                <div 
-                  key={event.id} 
-                  className="sidebar-event-card"
-                  style={event.color ? { borderLeft: `3px solid ${event.color}` } : undefined}
-                >
-                  <div className="sidebar-event-card-header">
-                    <span className="sidebar-event-title">{event.title}</span>
-                    <button 
-                      className="sidebar-event-delete"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      title="Cancel Event"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                  
-                  {event.startTime && (
-                    <div className="sidebar-event-time">
-                      <Clock size={11} />
-                      <span>
-                        {event.startTime} {event.endTime ? ` - ${event.endTime}` : ''}
+              <>
+                {/* Render Official Thai Holidays */}
+                {selectedDateHolidays.map(holiday => (
+                  <div 
+                    key={holiday.slug} 
+                    className="sidebar-event-card"
+                    style={{
+                      borderLeft: '3px solid #d97706',
+                      backgroundColor: 'rgba(245, 158, 11, 0.04)',
+                      borderColor: 'rgba(245, 158, 11, 0.15)'
+                    }}
+                  >
+                    <div className="sidebar-event-card-header">
+                      <span className="sidebar-event-title" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                        <span>🇹🇭</span>
+                        <span>{holiday.title}</span>
+                      </span>
+                      <div 
+                        style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        title="Official Thai Holiday (Read Only)"
+                      >
+                        <Lock size={10} />
+                        <span style={{ fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Official</span>
+                      </div>
+                    </div>
+                    
+                    <div className="sidebar-event-time" style={{ color: '#b45309' }}>
+                      <Info size={11} />
+                      <span style={{ fontWeight: 600, fontSize: '10px' }}>
+                        วันหยุดราชการไทย (Thai Public Holiday)
                       </span>
                     </div>
-                  )}
 
-                  {event.description && (
-                    <p className="sidebar-event-desc">{event.description}</p>
-                  )}
-                </div>
-              ))
+                    {holiday.details && (
+                      <p className="sidebar-event-desc" style={{ fontSize: '11px', opacity: 0.95, lineHeight: 1.4 }}>
+                        {holiday.details}
+                      </p>
+                    )}
+                    
+                    {holiday.alcohol_ban && (
+                      <div style={{
+                        marginTop: '4px',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: 'rgba(220, 38, 38, 0.06)',
+                        border: '1px dashed rgba(220, 38, 38, 0.2)',
+                        color: '#dc2626',
+                        fontSize: '9px',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        width: 'fit-content'
+                      }}>
+                        🚫 ห้ามจำหน่ายเครื่องดื่มแอลกอฮอล์ (Alcohol sales banned)
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Render Personal Events */}
+                {selectedDateEvents.map(event => (
+                  <div 
+                    key={event.id} 
+                    className="sidebar-event-card"
+                    style={event.color ? { borderLeft: `3px solid ${event.color}` } : undefined}
+                  >
+                    <div className="sidebar-event-card-header">
+                      <span className="sidebar-event-title">{event.title}</span>
+                      <button 
+                        className="sidebar-event-delete"
+                        onClick={() => handleDeleteEvent(event.id)}
+                        title="Cancel Event"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                    
+                    {event.startTime && (
+                      <div className="sidebar-event-time">
+                        <Clock size={11} />
+                        <span>
+                          {event.startTime} {event.endTime ? ` - ${event.endTime}` : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    {event.description && (
+                      <p className="sidebar-event-desc">{event.description}</p>
+                    )}
+                  </div>
+                ))}
+              </>
             )}
           </div>
 
