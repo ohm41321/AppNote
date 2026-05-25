@@ -19,7 +19,9 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Download,
+  Upload
 } from 'lucide-react';
 
 export default function Home() {
@@ -207,6 +209,83 @@ export default function Home() {
     setIsScratchpadOpen(false);
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = () => {
+    try {
+      const keys = [
+        'appnote-notes',
+        'appnote-tasks',
+        'appnote-events',
+        'appnote-scratchpad',
+        'appnote-scratchpad-open',
+        'appnote-theme',
+        'appnote-guide-viewed',
+        'appnote-show-holidays',
+        'appnote-last-reset-date'
+      ];
+      
+      const backupData: Record<string, string | null> = {};
+      keys.forEach(key => {
+        backupData[key] = localStorage.getItem(key);
+      });
+      
+      const jsonStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const dateStr = new Date().toISOString().split('T')[0];
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lucianote-backup-${dateStr}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export data: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        
+        const expectedKeys = ['appnote-notes', 'appnote-tasks', 'appnote-events'];
+        const hasValidKeys = expectedKeys.some(key => key in json);
+        
+        if (!hasValidKeys) {
+          throw new Error('Invalid backup file structure.');
+        }
+
+        if (confirm('Importing data will overwrite your current notes, tasks, and calendar events. Do you want to proceed?')) {
+          Object.keys(json).forEach(key => {
+            if (key.startsWith('appnote-')) {
+              const value = json[key];
+              if (value !== null) {
+                localStorage.setItem(key, value);
+              }
+            }
+          });
+          
+          alert('Data imported successfully! The page will now reload.');
+          window.location.reload();
+        }
+      } catch (error) {
+        alert('Failed to import backup file. Make sure it is a valid LuciaNote JSON backup file.\nError: ' + (error instanceof Error ? error.message : String(error)));
+      } finally {
+        if (e.target) e.target.value = '';
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+
   // Compute Active counts
   const activeTasksCount = tasks.filter(t => !t.isCompleted).length;
   const totalEventsCount = events.length;
@@ -386,6 +465,37 @@ export default function Home() {
             <Sparkles size={11} style={{ color: '#50e3c2' }} />
             <span className="text-mono">Tour Guide</span>
           </button>
+
+          {/* Backup & Restore Buttons */}
+          <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '4px' }}>
+            <button
+              type="button"
+              className="secondary-btn"
+              style={{ flex: 1, fontSize: '10px', padding: '6px 0', justifyContent: 'center', height: '28px', gap: '4px', border: '1px solid var(--border-primary)' }}
+              onClick={handleExportData}
+              title="Export all data as JSON backup"
+            >
+              <Download size={11} />
+              <span className="text-mono">Export</span>
+            </button>
+            <button
+              type="button"
+              className="secondary-btn"
+              style={{ flex: 1, fontSize: '10px', padding: '6px 0', justifyContent: 'center', height: '28px', gap: '4px', border: '1px solid var(--border-primary)' }}
+              onClick={() => fileInputRef.current?.click()}
+              title="Import data from JSON backup"
+            >
+              <Upload size={11} />
+              <span className="text-mono">Import</span>
+            </button>
+            <input 
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleImportData}
+            />
+          </div>
 
           {/* Theme toggler */}
           <div className="theme-toggle-container">
