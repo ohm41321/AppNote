@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useIndexedDB } from '@/hooks/useIndexedDB';
 import { Note, Task, CalendarEvent } from '@/types';
 import NotesTab from '@/components/NotesTab';
 import TasksTab from '@/components/TasksTab';
@@ -46,13 +47,13 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState('');
   const [currentDateStr, setCurrentDateStr] = useState('');
 
-  // Local Storage Data Hydration-Safe States
-  const [notes, setNotes, isNotesHydrated] = useLocalStorage<Note[]>('appnote-notes', []);
-  const [tasks, setTasks, isTasksHydrated] = useLocalStorage<Task[]>('appnote-tasks', []);
-  const [events, setEvents, isEventsHydrated] = useLocalStorage<CalendarEvent[]>('appnote-events', []);
+  // IndexedDB Data Hydration-Safe States (Migrates from legacy localStorage keys if found)
+  const [notes, setNotes, isNotesHydrated] = useIndexedDB<Note[]>('notes', [], 'appnote-notes');
+  const [tasks, setTasks, isTasksHydrated] = useIndexedDB<Task[]>('tasks', [], 'appnote-tasks');
+  const [events, setEvents, isEventsHydrated] = useIndexedDB<CalendarEvent[]>('events', [], 'appnote-events');
 
-  // QoL Feature: Scratchpad LocalStorage persistence
-  const [scratchpadText, setScratchpadText, isScratchpadHydrated] = useLocalStorage<string>('appnote-scratchpad', '');
+  // QoL Feature: Scratchpad IndexedDB persistence
+  const [scratchpadText, setScratchpadText, isScratchpadHydrated] = useIndexedDB<string>('scratchpad', '', 'appnote-scratchpad');
   const [isScratchpadOpen, setIsScratchpadOpen] = useLocalStorage<boolean>('appnote-scratchpad-open', false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -213,22 +214,17 @@ export default function Home() {
 
   const handleExportData = () => {
     try {
-      const keys = [
-        'appnote-notes',
-        'appnote-tasks',
-        'appnote-events',
-        'appnote-scratchpad',
-        'appnote-scratchpad-open',
-        'appnote-theme',
-        'appnote-guide-viewed',
-        'appnote-show-holidays',
-        'appnote-last-reset-date'
-      ];
-      
-      const backupData: Record<string, string | null> = {};
-      keys.forEach(key => {
-        backupData[key] = localStorage.getItem(key);
-      });
+      const backupData: Record<string, string | null> = {
+        'appnote-notes': JSON.stringify(notes),
+        'appnote-tasks': JSON.stringify(tasks),
+        'appnote-events': JSON.stringify(events),
+        'appnote-scratchpad': JSON.stringify(scratchpadText),
+        'appnote-scratchpad-open': localStorage.getItem('appnote-scratchpad-open'),
+        'appnote-theme': localStorage.getItem('appnote-theme'),
+        'appnote-guide-viewed': localStorage.getItem('appnote-guide-viewed'),
+        'appnote-show-holidays': localStorage.getItem('appnote-show-holidays'),
+        'appnote-last-reset-date': localStorage.getItem('appnote-last-reset-date'),
+      };
       
       const jsonStr = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -252,7 +248,7 @@ export default function Home() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
         
@@ -264,14 +260,26 @@ export default function Home() {
         }
 
         if (confirm('Importing data will overwrite your current notes, tasks, and calendar events. Do you want to proceed?')) {
-          Object.keys(json).forEach(key => {
-            if (key.startsWith('appnote-')) {
-              const value = json[key];
-              if (value !== null) {
+          const dbKeysMap: Record<string, string> = {
+            'appnote-notes': 'notes',
+            'appnote-tasks': 'tasks',
+            'appnote-events': 'events',
+            'appnote-scratchpad': 'scratchpad'
+          };
+
+          const { setDbValue } = await import('@/utils/db');
+
+          for (const key of Object.keys(json)) {
+            const value = json[key];
+            if (value !== null) {
+              if (key in dbKeysMap) {
+                const parsedValue = JSON.parse(value);
+                await setDbValue(dbKeysMap[key], parsedValue);
+              } else if (key.startsWith('appnote-')) {
                 localStorage.setItem(key, value);
               }
             }
-          });
+          }
           
           alert('Data imported successfully! The page will now reload.');
           window.location.reload();
