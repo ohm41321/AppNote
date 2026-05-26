@@ -74,6 +74,23 @@ export default function Home() {
         const lastResetDate = window.localStorage.getItem('appnote-last-reset-date');
 
         if (lastResetDate !== todayStr) {
+          // Helper to get start of week string (Sunday-based)
+          const getStartOfWeekStr = (dateStr: string) => {
+            try {
+              const d = new Date(dateStr);
+              if (isNaN(d.getTime())) return '';
+              const day = d.getDay();
+              d.setDate(d.getDate() - day);
+              return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+            } catch {
+              return '';
+            }
+          };
+
+          const currentWeekStart = getStartOfWeekStr(todayStr);
+          const lastWeekStart = lastResetDate ? getStartOfWeekStr(lastResetDate) : '';
+          const hasCrossedNewWeek = !lastResetDate || currentWeekStart !== lastWeekStart;
+
           setTasks(prev => {
             let wasUpdated = false;
             const updatedTasks = prev.map(task => {
@@ -83,9 +100,8 @@ export default function Home() {
                 return { ...task, isCompleted: false };
               }
 
-              // Reset Weekly Habits on Sundays
-              const isSunday = now.getDay() === 0;
-              if (task.recurring === 'weekly' && isSunday && task.isCompleted) {
+              // Reset Weekly Habits (if we crossed into a new week)
+              if (task.recurring === 'weekly' && hasCrossedNewWeek && task.isCompleted) {
                 wasUpdated = true;
                 return { ...task, isCompleted: false };
               }
