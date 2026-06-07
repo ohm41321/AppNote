@@ -60,3 +60,12 @@ export interface CustomSheet {
   updatedAt: string;
 }
 
+export interface ThaiHoliday {
+  title: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  type: string; // "holiday" or "holiday_no_alc"
+  alcohol_ban: boolean;
+  details?: string;
+  slug: string;
+}
