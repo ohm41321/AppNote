@@ -17,7 +17,6 @@ import {
   AlignLeft,
   Save,
   BookOpen,
-  Dumbbell,
   CheckCircle,
   Eye,
   Settings,
@@ -162,53 +161,38 @@ export default function SheetsTab({
     setIsEditing(true);
   };
 
-  // Create Workout & Diet Plan template manually (Fallback if not hydrated)
-  const handleCreateWorkoutTemplate = () => {
+    // Create Habit Tracker template manually
+  const handleCreateHabitTemplate = () => {
     const now = new Date().toISOString();
     const templateSheet: CustomSheet = {
       id: crypto.randomUUID(),
-      title: 'ตารางออกกำลังกาย & ควบคุมอาหาร (ตัวอย่าง)',
-      description: 'โปรแกรมและเป้าหมายการซ้อมเพื่อสุขภาพและคุมน้ำหนักประจำสัปดาห์',
+      title: 'ตารางติดตามนิสัย & เป้าหมายรายสัปดาห์ (ตัวอย่าง)',
+      description: 'ใช้ติดตามและบันทึกพฤติกรรมเชิงบวกที่ต้องการสร้างในชีวิตประจำวัน',
       isPinned: true,
       sections: [
         {
           id: crypto.randomUUID(),
           type: 'text',
-          title: 'เป้าหมายแรกเริ่ม',
-          content: 'น้ำหนักเป้าหมาย: ลด 3-5 กิโลกรัม ใน 3 เดือนแรก\n\n* เน้นการปรับพฤติกรรมการทานและขยับตัวในชีวิตประจำวัน'
+          title: 'เป้าหมายหลักประจำสัปดาห์',
+          content: '• ดื่มน้ำให้เพียงพออย่างน้อยวันละ 2 ลิตร\n• ขยับร่างกายอย่างน้อย 30 นาที/วัน\n• พักผ่อนให้ครบ 7 ชั่วโมง\n• มีเวลาทบทวนตัวเองหรืออ่านหนังสือสั้นๆ ก่อนนอน'
         },
         {
           id: crypto.randomUUID(),
           type: 'table',
-          title: 'ตารางการออกกำลังกายรายสัปดาห์',
-          headers: ['วัน', 'เวลา', 'กิจกรรม/โปรแกรม'],
+          title: 'ตารางติดตามนิสัยรายวัน',
+          headers: ['นิสัยที่ต้องการทำ', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
           rows: [
-            ['จันทร์', 'เย็น', 'เดินเร็วบนลู่วิ่ง 30 นาที'],
-            ['อังคาร', 'พัก', 'เดินเล่นยืดเหยียดร่างกาย'],
-            ['พุธ', 'เย็น', 'เวทเทรนนิ่งเน้นส่วนบน 30 นาที'],
-            ['พฤหัส', 'พัก', 'เดินเล่นหลังอาหาร 15 นาที'],
-            ['ศุกร์', 'เย็น', 'เดินเร็วบนลู่วิ่ง 30 นาที'],
-            ['เสาร์', 'เช้า', 'เวทเทรนนิ่งทั่วร่างกาย 45 นาที'],
-            ['อาทิตย์', 'พัก', 'พักผ่อนเต็มที่']
+            ['ดื่มน้ำ 2-3 ลิตร', '✅', '✅', '✅', '❌', '✅', '✅', ''],
+            ['ขยับร่างกาย/เดิน 8,000 ก้าว', '✅', '❌', '✅', 'พัก', '✅', '❌', ''],
+            ['นอนหลับ 7-8 ชั่วโมง', '✅', '✅', '❌', '✅', '✅', '✅', ''],
+            ['อ่านหนังสือ/พัฒนาตัวเอง', '❌', '✅', '✅', '❌', '✅', '❌', '']
           ]
         },
         {
           id: crypto.randomUUID(),
           type: 'text',
-          title: 'ตัวอย่างโปรแกรมเวทเทรนนิ่ง (เน้นท่าพื้นฐาน)',
-          content: '• Squat (ต้นขาและก้น) — 12 ครั้ง x 3 เซ็ต\n• Push-ups (อกและหลังแขน) — 10 ครั้ง x 3 เซ็ต\n• Dumbbell Row (แผ่นหลังและหน้าแขน) — 12 ครั้ง x 3 เซ็ต\n• Shoulder Press (หัวไหล่) — 12 ครั้ง x 3 เซ็ต\n• Plank (แกนกลางลำตัว) — 30 วินาที x 3 เซ็ต\n\n* พักระหว่างเซ็ต 60-90 วินาที'
-        },
-        {
-          id: crypto.randomUUID(),
-          type: 'text',
-          title: 'แนวทางการควบคุมอาหารพื้นฐาน',
-          content: '**หลักการทั่วไป:**\n✅ เพิ่มสัดส่วนอาหารโปรตีนสูง (เช่น เนื้อปลา, อกไก่, ไข่ต้ม)\n✅ ลดอาหารหวานและเครื่องดื่มที่มีน้ำตาลสูง\n✅ ปรับลดข้าวขาวหรือแป้งขัดสี\n\n**ข้อแนะนำเพิ่มเติม:**\n• มื้อเช้า: เน้นอาหารโปรตีนและคาร์โบไฮเดรตเชิงซ้อน\n• มื้อกลางวัน: ทานอาหารตามปกติแต่เลี่ยงของมันของทอด\n• มื้อเย็น: เน้นเมนูต้ม, ตุ๋น, หรือนึ่ง และเพิ่มสัดส่วนผัก'
-        },
-        {
-          id: crypto.randomUUID(),
-          type: 'text',
-          title: 'เป้าหมายสุขภาพประจำวัน',
-          content: '✅ ดื่มน้ำสะอาด 2-3 ลิตร/วัน\n✅ ขยับร่างกาย/เดินให้ได้ 8,000 ก้าว\n✅ พักผ่อนนอนหลับ 7-8 ชั่วโมง'
+          title: 'บันทึกและข้อคิดประจำสัปดาห์',
+          content: '**สิ่งที่ทำได้ดี:**\n- ดื่มน้ำได้ค่อนข้างสม่ำเสมอในระหว่างวัน\n- นอนหลับได้ดีขึ้นในช่วงกลางสัปดาห์\n\n**สิ่งที่ควรปรับปรุง:**\n- หาเวลาขยับตัวระหว่างทำงานเพิ่มขึ้น เพื่อไม่ให้นั่งนานเกินไป\n- ช่วงวันหยุดมักจะลืมอ่านหนังสือ ต้องตั้งเป้าให้ชัดเจนขึ้น'
         }
       ],
       createdAt: now,
@@ -219,7 +203,7 @@ export default function SheetsTab({
     handleOpenSheet(templateSheet);
   };
 
-  // Helper to format text lines (for nice bullets and status highlights in read mode)
+// Helper to format text lines (for nice bullets and status highlights in read mode)
   const formatTextContent = (text: string) => {
     return text.split('\n').map((line, idx) => {
       let trimmed = line.trim();
@@ -540,22 +524,23 @@ export default function SheetsTab({
             <div className="sheets-templates-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
               <div 
                 className="card animate-slide-up template-card"
-                onClick={handleCreateWorkoutTemplate}
+                onClick={handleCreateHabitTemplate}
                 style={{ cursor: 'pointer', borderLeft: '4px solid #50e3c2', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <Dumbbell size={18} style={{ color: '#50e3c2' }} />
-                    <strong style={{ fontSize: '14px' }}>ตารางออกกำลังกาย & คุมอาหาร</strong>
+                    <CheckCircle size={18} style={{ color: '#50e3c2' }} />
+                    <strong style={{ fontSize: '14px' }}>ตารางติดตามนิสัย (Habit Tracker)</strong>
                   </div>
                   <p style={{ fontSize: '11px', color: 'var(--fg-secondary)', lineHeight: '1.4' }}>
-                    ตารางซ้อมประจำวัน, โปรแกรมเวท และแผนคุมอาหารประจำสัปดาห์ (ข้อมูลจำลอง)
+                    ตารางบันทึกพฤติกรรมเชิงบวก และเป้าหมายประจำวัน/สัปดาห์ (ข้อมูลจำลอง)
                   </p>
                 </div>
                 <span className="text-mono" style={{ fontSize: '10px', color: '#50e3c2', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '12px' }}>
                   <Plus size={10} /> ใช้เทมเพลตนี้
                 </span>
               </div>
+
 
               <div 
                 className="card animate-slide-up template-card"
