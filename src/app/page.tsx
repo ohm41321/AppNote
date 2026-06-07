@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Note, Task, CalendarEvent } from '@/types';
+import { Note, Task, CalendarEvent, CustomSheet, SheetSection } from '@/types';
 import NotesTab from '@/components/NotesTab';
 import TasksTab from '@/components/TasksTab';
 import CalendarTab from '@/components/CalendarTab';
+import SheetsTab from '@/components/SheetsTab';
 import OnboardingGuide from '@/components/OnboardingGuide';
 import { 
   StickyNote, 
@@ -19,11 +20,13 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  BookOpen
 } from 'lucide-react';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'notes' | 'calendar' | 'tasks'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'calendar' | 'tasks' | 'sheets'>('notes');
+  const [selectedSheetId, setSelectedSheetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('appnote-theme', 'dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -48,13 +51,84 @@ export default function Home() {
   const [notes, setNotes, isNotesHydrated] = useLocalStorage<Note[]>('appnote-notes', []);
   const [tasks, setTasks, isTasksHydrated] = useLocalStorage<Task[]>('appnote-tasks', []);
   const [events, setEvents, isEventsHydrated] = useLocalStorage<CalendarEvent[]>('appnote-events', []);
-  
-  // QoL Feature: Scratchpad LocalStorage persistence
+  const [sheets, setSheets, isSheetsHydrated] = useLocalStorage<CustomSheet[]>('appnote-sheets', []);
+
   const [scratchpadText, setScratchpadText, isScratchpadHydrated] = useLocalStorage<string>('appnote-scratchpad', '');
   const [isScratchpadOpen, setIsScratchpadOpen] = useLocalStorage<boolean>('appnote-scratchpad-open', false);
-
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-load user's custom workout & diet plan if sheets is empty AND not yet initialized
+  useEffect(() => {
+    if (isSheetsHydrated) {
+      const isInitialized = window.localStorage.getItem('appnote-sheets-initialized-v3');
+      if (!isInitialized) {
+        const now = new Date().toISOString();
+        const defaultSheet: CustomSheet = {
+          id: crypto.randomUUID(),
+          title: 'ตารางออกกำลังกาย & ควบคุมอาหาร (3 เดือนแรก)',
+          description: 'โปรแกรมและเป้าหมายการซ้อมเพื่อสุขภาพ คุมน้ำหนักจาก 85-87 กก. เหลือ 80-82 กก.',
+          isPinned: true,
+          sections: [
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'เป้าหมาย 3 เดือนแรก',
+              content: 'น้ำหนักปัจจุบัน: 85-87 กก.\nส่วนสูง: 180 ซม.\nเป้าหมาย: 80-82 กก.\nลดประมาณ 0.5 กก./สัปดาห์\n\n* ไม่ต้องอดอาหาร ไม่ต้องวิ่งหนัก'
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'table',
+              title: 'ตารางออกกำลังกายประจำสัปดาห์',
+              headers: ['วัน', 'เวลา', 'โปรแกรม'],
+              rows: [
+                ['จันทร์', 'หลังเลิกงาน', 'ลู่วิ่ง 20-30 นาที'],
+                ['อังคาร', 'พัก', 'เดินเล่นหลังอาหาร 10-15 นาที (ถ้าไหว)'],
+                ['พุธ', 'หลังเลิกงาน', 'เวทดัมเบล 30-40 นาที'],
+                ['พฤหัส', 'พัก', 'เดินเล่น 10-15 นาที'],
+                ['ศุกร์', 'หลังเลิกงาน', 'ลู่วิ่ง 20-30 นาที'],
+                ['เสาร์', 'เช้าหรือเย็น', 'เวทเต็มตัว 45-60 นาที'],
+                ['อาทิตย์', 'เช้าหรือเย็น', 'ลู่วิ่ง 45-60 นาที']
+              ]
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'โปรแกรมเวทวันพุธ (3 เซ็ตทุกท่า)',
+              content: '• Goblet Squat — 12 ครั้ง\n• Dumbbell Row — 12 ครั้ง\n• Dumbbell Shoulder Press — 12 ครั้ง\n• Romanian Deadlift — 12 ครั้ง\n• Plank — 30-45 วินาที\n\n* พักระหว่างเซ็ต 60-90 วินาที'
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'โปรแกรมเวทวันเสาร์ (3-4 เซ็ตทุกท่า)',
+              content: '• ขา: Goblet Squat × 12 / Lunge × 10 ต่อข้าง\n• หลัง: Dumbbell Row × 12\n• อก: Push-up × มากที่สุดที่ทำได้\n• ไหล่: Shoulder Press × 12\n• แขน: Bicep Curl × 12 / Tricep Extension × 12\n• ท้อง: Plank × 3 รอบ'
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'คู่มือลู่วิ่ง (วิ่ง/เดินเร็ว)',
+              content: '• วันธรรมดา: เดินเร็ว/วิ่ง 20-30 นาที ความเร็ว 5-6 km/h, ความชัน 5-8%\n• วันอาทิตย์: เดินเร็ว/วิ่ง 45-60 นาที\n\n* ไม่จำเป็นต้องวิ่ง เดินเร็วพอก็ได้ผล'
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'แผนการรับประทานอาหาร',
+              content: '**หลักการเลือกกินอาหารบ้าน (กินร่วมกับที่บ้านได้):**\n✅ เพิ่มโปรตีน\n✅ ลดข้าว\n❌ ลดน้ำหวาน\n\n**มื้อเช้า (เลือกอย่างใดอย่างหนึ่ง):**\n• ชุด A: ไข่ต้ม 2 ฟอง + กล้วย 1 ลูก + กาแฟดำ\n• ชุด B: ไข่ต้ม 2 ฟอง + ขนมปังโฮลวีต 2 แผ่น\n• ชุด C: นมโปรตีน 1 กล่อง (โปรตีน 25-30g) + กล้วย 1 ลูก\n\n**มื้อกลางวัน:**\n• กินตามปกติ: ข้าว 1-1.5 ทัพพี, เนื้อสัตว์ 2 ฝ่ามือ, ผักตามที่มี\n• หลีกเลี่ยง: การเติมข้าวเพิ่ม, น้ำหวานต่าง ๆ\n\n**มื้อเย็น:**\n• กินกับข้าวบ้านได้ปกติ เช่น แกงจืด, ต้ม, ผัดผัก, เมนูไก่ หรือปลา\n• หากเป็นของทอดหรือของมัน (หมูทอด, ไก่ทอด) ให้กินได้แต่ลดข้าวเหลือ 1 ทัพพี\n\n**ของว่างระหว่างวัน (กินเมื่อหิว):**\n• เลือกอย่างใดอย่างหนึ่ง: ไข่ต้ม 2 ฟอง, กล้วย 1 ลูก, นมโปรตีน 1 กล่อง, โยเกิร์ตน้ำตาลต่ำ\n\n**สิ่งที่ควรซื้อติดบ้าน:**\n• ไข่ (วันละ 2-4 ฟอง)\n• นมโปรตีน (เช่น Meiji High Protein, Dutch Mill หรือยี่ห้ออื่น)\n• กล้วย (กินง่ายก่อนทำงาน)'
+            },
+            {
+              id: crypto.randomUUID(),
+              type: 'text',
+              title: 'เป้าหมายง่าย ๆ ที่ต้องทำทุกวัน',
+              content: '✅ ได้รับโปรตีนอย่างน้อย 100 กรัม/วัน\n✅ ทานไข่ต้มให้ได้ 2-4 ฟอง/วัน\n✅ ดื่มน้ำ 2.5-3 ลิตร/วัน\n✅ เดินสะสมให้ได้ 7,000 - 10,000 ก้าว/วัน\n✅ เข้านอนก่อนเวลา 23:30 น.'
+            }
+          ],
+          createdAt: now,
+          updatedAt: now
+        };
+        setSheets([defaultSheet]);
+        window.localStorage.setItem('appnote-sheets-initialized-v3', 'true');
+      }
+    }
+  }, [isSheetsHydrated, sheets, setSheets]);
   // Synchronize CSS Theme Data-attribute
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -207,11 +281,136 @@ export default function Home() {
     setIsScratchpadOpen(false);
   };
 
+  // QoL Convert Scratchpad drafts to a Sheet (Tables + Text sections)
+  const convertScratchpadToSheet = () => {
+    if (!scratchpadText.trim()) return;
+
+    const lines = scratchpadText.split('\n');
+    const sections: SheetSection[] = [];
+    let currentSectionTitle = 'รายละเอียด';
+    let currentSectionLines: string[] = [];
+    let title = 'ตารางจาก Scratchpad';
+    let description = 'นำเข้าจากบันทึกร่างด่วน';
+
+    // Helper to flush current text/table sections
+    const flushSection = () => {
+      if (currentSectionLines.length === 0) return;
+
+      let isTable = false;
+      let headers: string[] = [];
+      let rows: string[][] = [];
+
+      // Split by tab, | or double spaces
+      const splitRow = (rowStr: string) => {
+        if (rowStr.includes('\t')) {
+          return rowStr.split('\t').map(s => s.trim());
+        }
+        if (rowStr.includes('|')) {
+          return rowStr.split('|').map(s => s.trim()).filter(s => s !== '');
+        }
+        if (/\s{2,}/.test(rowStr)) {
+          return rowStr.split(/\s{2,}/).map(s => s.trim());
+        }
+        return [];
+      };
+
+      const activeLines = currentSectionLines.filter(l => l.trim() !== '');
+
+      if (activeLines.length >= 2) {
+        const potentialHeaders = splitRow(activeLines[0]);
+        if (potentialHeaders.length >= 2) {
+          let validRows = 0;
+          const tempRows: string[][] = [];
+          for (let i = 1; i < activeLines.length; i++) {
+            const split = splitRow(activeLines[i]);
+            if (split.length > 0) {
+              validRows++;
+              while (split.length < potentialHeaders.length) {
+                split.push('');
+              }
+              tempRows.push(split.slice(0, potentialHeaders.length));
+            }
+          }
+          if (validRows > 0) {
+            isTable = true;
+            headers = potentialHeaders;
+            rows = tempRows;
+          }
+        }
+      }
+
+      if (isTable) {
+        sections.push({
+          id: crypto.randomUUID(),
+          type: 'table',
+          title: currentSectionTitle,
+          headers,
+          rows
+        });
+      } else {
+        sections.push({
+          id: crypto.randomUUID(),
+          type: 'text',
+          title: currentSectionTitle,
+          content: currentSectionLines.join('\n')
+        });
+      }
+
+      currentSectionLines = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (i === 0 && (trimmed.startsWith('#') || trimmed.startsWith('**'))) {
+        title = trimmed.replace(/[#*]/g, '').trim();
+        continue;
+      }
+      if (i === 1 && !trimmed.startsWith('#') && !trimmed.startsWith('**') && trimmed !== '') {
+        description = trimmed;
+        continue;
+      }
+
+      const isNewSection = 
+        trimmed.startsWith('##') || 
+        (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length > 4) ||
+        (/^[^\s:][^:]+:$/.test(trimmed) && trimmed.length < 50);
+
+      if (isNewSection) {
+        flushSection();
+        currentSectionTitle = trimmed.replace(/[#*:]/g, '').trim();
+      } else {
+        currentSectionLines.push(line);
+      }
+    }
+
+    flushSection();
+
+    const now = new Date().toISOString();
+    const newSheetId = crypto.randomUUID();
+    const newSheet: CustomSheet = {
+      id: newSheetId,
+      title,
+      description,
+      isPinned: false,
+      sections,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    setSheets(prev => [newSheet, ...prev]);
+    setScratchpadText('');
+    setSelectedSheetId(newSheetId);
+    setActiveTab('sheets');
+    setIsScratchpadOpen(false);
+  };
+
   // Compute Active counts
   const activeTasksCount = tasks.filter(t => !t.isCompleted).length;
   const totalEventsCount = events.length;
 
-  const isFullyHydrated = isNotesHydrated && isTasksHydrated && isEventsHydrated && isScratchpadHydrated;
+  const isFullyHydrated = isNotesHydrated && isTasksHydrated && isEventsHydrated && isScratchpadHydrated && isSheetsHydrated;
 
   const renderContent = () => {
     if (!isFullyHydrated) {
@@ -230,6 +429,16 @@ export default function Home() {
         return <CalendarTab events={events} setEvents={setEvents} searchQuery={searchQuery} />;
       case 'tasks':
         return <TasksTab tasks={tasks} setTasks={setTasks} searchQuery={searchQuery} />;
+      case 'sheets':
+        return (
+          <SheetsTab 
+            sheets={sheets} 
+            setSheets={setSheets} 
+            searchQuery={searchQuery} 
+            selectedSheetId={selectedSheetId}
+            setSelectedSheetId={setSelectedSheetId}
+          />
+        );
       default:
         return null;
     }
@@ -243,6 +452,8 @@ export default function Home() {
         return 'Scheduler Calendar';
       case 'tasks':
         return 'Checklist Tasks';
+      case 'sheets':
+        return 'Guides & Sheets';
       default:
         return 'AppNote';
     }
@@ -319,6 +530,17 @@ export default function Home() {
                   {activeTasksCount}
                 </span>
               )}
+            </button>
+
+            <button 
+              className={`nav-item ${activeTab === 'sheets' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('sheets'); setIsSidebarOpen(false); }}
+            >
+              <span className="nav-item-left">
+                <BookOpen size={16} />
+                <span>Guides & Sheets</span>
+              </span>
+              <span className="nav-badge">{sheets.length}</span>
             </button>
           </nav>
         </div>
@@ -518,6 +740,15 @@ export default function Home() {
                   title="Convert each line into a checklist Task"
                 >
                   <ClipboardList size={12} /> Convert to Tasks
+                </button>
+                <button 
+                  className="secondary-btn" 
+                  style={{ width: '100%', fontSize: '11px', padding: '6px 0', justifyContent: 'center' }}
+                  onClick={convertScratchpadToSheet}
+                  disabled={!scratchpadText.trim()}
+                  title="Convert to custom tables and guides"
+                >
+                  <BookOpen size={12} /> Convert to Sheet
                 </button>
               </div>
               <button 

@@ -32,3 +32,31 @@ export interface CalendarEvent {
   color?: string;
   createdAt: string;
 }
+
+export interface SheetTableSection {
+  id: string;
+  type: 'table';
+  title: string;
+  headers: string[];
+  rows: string[][];
+}
+
+export interface SheetTextSection {
+  id: string;
+  type: 'text';
+  title: string;
+  content: string;
+}
+
+export type SheetSection = SheetTableSection | SheetTextSection;
+
+export interface CustomSheet {
+  id: string;
+  title: string;
+  description?: string;
+  isPinned?: boolean;
+  sections: SheetSection[];
+  createdAt: string;
+  updatedAt: string;
+}
+
